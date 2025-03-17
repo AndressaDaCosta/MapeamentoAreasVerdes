@@ -161,7 +161,7 @@ Se deseja rodar o **servidor web** e acessar a aplicação pelo navegador:
 ### **1️⃣ Clone o repositório**
 
 ```json
-git clone [git@github.com](mailto:git@github.com):AndressaDaCosta/MapeamentoAreasVerdes.git
+git clone git@github.com:AndressaDaCosta/MapeamentoAreasVerdes.git
 ```
 
 ### **2️⃣ Acesse o diretório do projeto**
