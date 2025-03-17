@@ -39,7 +39,8 @@ O **Mapeamento de Áreas Verdes de Joinville** é um sistema interativo que perm
 ```
 MapeamentoAreasVerdes/
 │── src/main/java/br/com/joinville/mapa/
-│   ├── Main.java                  # Classe principal do sistema
+│   ├── MainTerminal.java                  # Classe principal do sistema (versão rodando no terminal)
+│   ├── Main.java                  # Classe principal do sistema (versão rodando na web)
 │   ├── AreaVerde.java              # Modelo para uma área verde
 │   ├── Localizacao.java            # Modelo para localização geográfica
 │   ├── Avaliacao.java               # Modelo para avaliações das áreas verdes
@@ -47,10 +48,15 @@ MapeamentoAreasVerdes/
 │   ├── LocalizacaoRepository.java  # Repositório de localizações
 │   ├── AvaliacaoRepository.java     # Repositório de avaliações
 │
-└── README.md                       # Documentação do projeto
+├──  pom.xml                         # Arquivo de configuração do Maven
+├── target                           # Pasta onde os arquivos compilados são armazenados
+└── README.md                        # Documentação do projeto
+
 ```
 
 ---
+
+# 🖥️ **Rodando a versão via terminal**
 
 ## ▶️ Como Executar o Projeto
 
@@ -91,7 +97,7 @@ rm -rf src/main/java/br/com/joinville/mapa/*.class
 5️⃣ **Execute o projeto**
 
 ```
-java -cp src/main/java br.com.joinville.mapa.Main
+java -cp src/main/java br.com.joinville.mapa.MainTerminal
 ```
 
 ---
@@ -145,6 +151,42 @@ Longitude (-180 a 180): -48.8489
 🔹 **Formato de Horário**: `HH:MM - HH:MM` (exemplo: `08:00 - 18:00`).
 
 🔹 **Latitude e Longitude**: Devem estar dentro dos intervalos geográficos corretos.
+
+---
+
+## 🚀 **Rodando na versão WEB**
+
+Se deseja rodar o **servidor web** e acessar a aplicação pelo navegador:
+
+### **1️⃣ Clone o repositório**
+
+```json
+git clone [git@github.com](mailto:git@github.com):AndressaDaCosta/MapeamentoAreasVerdes.git
+```
+
+### **2️⃣ Acesse o diretório do projeto**
+
+```json
+cd MapeamentoAreasVerdes
+```
+
+### **3️⃣ Compile o projeto**
+
+```json
+mvn clean compile
+```
+
+### **4️⃣ Execute o projeto na versão web**
+
+```json
+mvn exec:java -Dexec.mainClass="br.com.joinville.mapa.Main"
+```
+
+Após isso, acesse no navegador:
+
+➡️ [**http://localhost:8080**](http://localhost:8080/)
+
+---
 
 ---
 
