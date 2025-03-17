@@ -1,246 +1,219 @@
 package br.com.joinville.mapa;
 
+import static spark.Spark.*;
 import java.util.List;
-import java.util.Scanner;
+import java.util.Optional;
 
 public class Main {
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        int opcao;
 
-        do {
-            System.out.println("\n🌳 Bem-vindo ao Mapeamento de Áreas Verdes de Joinville! 🌿");
-            System.out.println("Digite a opção que deseja acessar:");
-            System.out.println("1- Listar Áreas Verdes");
-            System.out.println("2- Avaliar Área Verde");
-            System.out.println("3- Ver detalhe de uma Área Verde");
-            System.out.println("4- Cadastrar nova Área Verde");
-            System.out.println("5- Listar Localizações");
-            System.out.println("0- Sair");
-            System.out.print("Opção: ");
-            while (!scanner.hasNextInt()) {
-                System.out.println("⚠️ Entrada inválida! Digite um número de 0 a 5.");
-                scanner.next();
-            }
+        public static void main(String[] args) {
+                port(8080);
 
-            opcao = scanner.nextInt();
-            scanner.nextLine();
+                get("/", (req, res) -> {
+                        StringBuilder html = new StringBuilder();
+                        html.append("<html><head><title>Áreas Verdes</title>");
+                        html.append("<meta charset='UTF-8'>");
+                        html.append("<style>body { font-family: Arial, sans-serif; text-align: center; }");
+                        html.append(
+                                        "button { padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }</style>");
+                        html.append("</head><body>");
 
-            switch (opcao) {
-                case 1:
-                    listarAreasVerdes();
-                    break;
-                case 2:
-                    avaliarAreaVerde(scanner);
-                    break;
-                case 3:
-                    verDetalheAreaVerde(scanner);
-                    break;
-                case 4:
-                    cadastrarAreaVerde(scanner);
-                    break;
-                case 5:
-                    listarLocalizacoes();
-                    break;
-                case 0:
-                    System.out.println(
-                            "\n✅ Saindo do sistema... Obrigado por usar o Mapeamento de Áreas Verdes de Joinville! 🌿");
-                    System.out.println("------------------------------------------------------");
-                    break;
-                default:
-                    System.out.println("⚠️ Opção inválida. Tente novamente.");
-            }
-        } while (opcao != 0);
+                        html.append("<h1>🌿 Mapeamento de Áreas Verdes</h1>");
 
-        scanner.close();
-    }
+                        // Formulário de cadastro
+                        html.append("<h2>📍 Cadastrar Nova Área Verde</h2>");
+                        html.append("<form action='/adicionar' method='post'>");
+                        html.append(
+                                        "Nome: <input type='text' name='nome' pattern='[A-Za-zÀ-ÿ ]{3,}' title='Apenas letras, mínimo 3 caracteres' required><br>");
+                        html.append(
+                                        "Tipo de Vegetação: <input type='text' name='tipo' pattern='[A-Za-zÀ-ÿ ]{3,}' title='Apenas letras, mínimo 3 caracteres' required><br>");
+                        html.append(
+                                        "Horário (HH:mm - HH:mm): <input type='text' name='horario' pattern='\\d{2}:\\d{2} - \\d{2}:\\d{2}' title='Exemplo: 08:00 - 18:00' required><br>");
+                        html.append(
+                                        "Latitude: <input type='text' name='latitude' pattern='-?\\d{1,2}\\.\\d{1,6}' title='Exemplo: -26.304400' required><br>");
+                        html.append(
+                                        "Longitude: <input type='text' name='longitude' pattern='-?\\d{1,3}\\.\\d{1,6}' title='Exemplo: -48.848900' required><br>");
+                        html.append("<button type='submit'>Adicionar</button></form>");
 
-    private static void listarAreasVerdes() {
-        List<AreaVerde> areas = AreaVerdeRepository.listarAreasVerdes();
-        if (areas.isEmpty()) {
-            System.out.println("\n----------------------------------");
-            System.out.println("⚠️ Nenhuma área verde cadastrada.");
-            System.out.println("----------------------------------\n");
-        } else {
-            System.out.println("\n📍 Áreas Verdes Cadastradas:");
-            for (AreaVerde area : areas) {
-                System.out.println(area);
-            }
+                        // Listar áreas cadastradas
+                        html.append("<h2>📋 Áreas Verdes Cadastradas</h2>");
+                        List<AreaVerde> areas = AreaVerdeRepository.listarAreasVerdes();
+                        if (areas.isEmpty()) {
+                                html.append("<p>⚠️ Nenhuma área cadastrada.</p>");
+                        } else {
+                                html.append("<ul>");
+                                for (AreaVerde area : areas) {
+                                        html.append("<li><b>").append(area.getNome()).append("</b> - ")
+                                                        .append(area.getTipoVegetacao()).append(" (")
+                                                        .append(area.getHorarioFuncionamento()).append(") ")
+                                                        .append("<a href='/detalhe?id=").append(area.getId())
+                                                        .append("'>🔍 Ver Detalhes</a> | ")
+                                                        .append("<a href='/avaliar?id=").append(area.getId())
+                                                        .append("'>🌟 Avaliar</a>")
+                                                        .append("</li>");
+                                }
+                                html.append("</ul>");
+                        }
+
+                        html.append("</body></html>");
+                        return html.toString();
+                });
+
+                // Cadastrar nova área verde
+                post("/adicionar", (req, res) -> {
+                        try {
+                                String nome = validarTexto(req.queryParams("nome"), "Nome");
+                                String tipo = validarTexto(req.queryParams("tipo"), "Tipo de Vegetação");
+                                String horario = validarHorario(req.queryParams("horario"));
+                                double latitude = validarCoordenada(req.queryParams("latitude"), -90, 90, "Latitude");
+                                double longitude = validarCoordenada(req.queryParams("longitude"), -180, 180,
+                                                "Longitude");
+
+                                AreaVerdeRepository.adicionarAreaVerde(nome, tipo, horario);
+                                int idNovaArea = AreaVerdeRepository.listarAreasVerdes().size();
+                                LocalizacaoRepository.adicionarLocalizacao(latitude, longitude, idNovaArea);
+
+                                res.redirect("/");
+                        } catch (Exception e) {
+                                return "<script>alert('" + e.getMessage() + "'); window.history.back();</script>";
+                        }
+                        return null;
+                });
+
+                // Detalhes de uma área verde
+                get("/detalhe", (req, res) -> {
+                        int id = Integer.parseInt(req.queryParams("id"));
+                        Optional<AreaVerde> areaOpt = AreaVerdeRepository.listarAreasVerdes().stream()
+                                        .filter(a -> a.getId() == id)
+                                        .findFirst();
+
+                        // Buscar a localização correspondente pelo ID da área verde
+                        Optional<Localizacao> localizacaoOpt = LocalizacaoRepository.listarLocalizacoes()
+                                        .stream().filter(l -> l.getIdAreaVerde() == id).findFirst();
+
+                        if (areaOpt.isEmpty()) {
+                                return "<h1>⚠️ Área não encontrada!</h1><br><a href='/'>Voltar</a>";
+                        }
+
+                        AreaVerde area = areaOpt.get();
+                        Localizacao localizacao = localizacaoOpt.orElse(null);
+
+                        List<Avaliacao> avaliacoes = AvaliacaoRepository.listarAvaliacoes().stream()
+                                        .filter(a -> a.getIdAreaVerde() == id).toList();
+
+                        StringBuilder html = new StringBuilder();
+                        html.append("<h1>").append(area.getNome()).append("</h1>");
+                        html.append("<p><b>Tipo de Vegetação:</b> ").append(area.getTipoVegetacao()).append("</p>");
+                        html.append("<p><b>Horário:</b> ").append(area.getHorarioFuncionamento()).append("</p>");
+
+                        // Exibir a localização, caso exista
+                        if (localizacao != null) {
+                                html.append("<p><b>Localização:</b> Latitude ")
+                                                .append(localizacao.getLatitude()).append(", Longitude ")
+                                                .append(localizacao.getLongitude()).append("</p>");
+                        } else {
+                                html.append("<p><b>Localização:</b> ⚠️ Não disponível</p>");
+                        }
+
+                        html.append("<h3>🌟 Avaliações:</h3>");
+                        if (avaliacoes.isEmpty()) {
+                                html.append("<p>⚠️ Nenhuma avaliação disponível.</p>");
+                        } else {
+                                double media = avaliacoes.stream().mapToDouble(Avaliacao::calcularMedia).average()
+                                                .orElse(0.0);
+                                html.append("<p><b>Média das Avaliações:</b> ").append(String.format("%.2f", media))
+                                                .append("</p>");
+                        }
+
+                        html.append("<br><a href='/'>Voltar</a>");
+                        return html.toString();
+                });
+
+                // Rota para exibir o formulário de avaliação de uma área verde
+                get("/avaliar", (req, res) -> {
+                        int id = Integer.parseInt(req.queryParams("id"));
+                        Optional<AreaVerde> areaOpt = AreaVerdeRepository.listarAreasVerdes()
+                                        .stream().filter(a -> a.getId() == id).findFirst();
+
+                        if (areaOpt.isEmpty()) {
+                                return "<h1>⚠️ Área Verde não encontrada!</h1><br><a href='/'>Voltar</a>";
+                        }
+
+                        AreaVerde area = areaOpt.get();
+                        StringBuilder html = new StringBuilder();
+                        html.append("<html><head><title>Avaliação</title></head><body>");
+                        html.append("<h1>🌟 Avaliação de ").append(area.getNome()).append("</h1>");
+                        html.append("<form action='/avaliar' method='post'>");
+                        html.append("<input type='hidden' name='id' value='").append(id).append("'>");
+                        html.append(
+                                        "<p>Quantidade de Árvores (1-5): <input type='number' name='arvores' min='1' max='5' required></p>");
+                        html.append("<p>Qualidade do Ar (1-5): <input type='number' name='ar' min='1' max='5' required></p>");
+                        html.append(
+                                        "<p>Ausência de Poluição Sonora (1-5): <input type='number' name='sonora' min='1' max='5' required></p>");
+                        html.append(
+                                        "<p>Coleta de Resíduos (1-5): <input type='number' name='residuos' min='1' max='5' required></p>");
+                        html.append(
+                                        "<p>Facilidade de Transporte Público (1-5): <input type='number' name='transporte' min='1' max='5' required></p>");
+                        html.append("<button type='submit'>Enviar Avaliação</button>");
+                        html.append("</form><br><a href='/'>Voltar</a>");
+                        html.append("</body></html>");
+
+                        return html.toString();
+                });
+
+                // Rota para processar a avaliação enviada
+                post("/avaliar", (req, res) -> {
+                        int id = Integer.parseInt(req.queryParams("id"));
+                        int qtdArvores = Integer.parseInt(req.queryParams("arvores"));
+                        int qualidadeAr = Integer.parseInt(req.queryParams("ar"));
+                        int sonora = Integer.parseInt(req.queryParams("sonora"));
+                        int residuos = Integer.parseInt(req.queryParams("residuos"));
+                        int transporte = Integer.parseInt(req.queryParams("transporte"));
+
+                        if (!validarNota(qtdArvores) || !validarNota(qualidadeAr) || !validarNota(sonora)
+                                        || !validarNota(residuos) || !validarNota(transporte)) {
+                                return "<script>alert('⚠️ Todas as notas devem ser entre 1 e 5!'); window.history.back();</script>";
+                        }
+
+                        AvaliacaoRepository.adicionarAvaliacao(id, qtdArvores, qualidadeAr, sonora, residuos,
+                                        transporte);
+                        res.redirect("/detalhe?id=" + id);
+                        return null;
+                });
+
         }
-    }
 
-    private static void avaliarAreaVerde(Scanner scanner) {
-        int idArea = obterIdValido(scanner, "Digite o ID da área verde que deseja avaliar");
+        // =================== FUNÇÕES AUXILIARES ===================
 
-        List<AreaVerde> areas = AreaVerdeRepository.listarAreasVerdes();
-        boolean existe = areas.stream().anyMatch(a -> a.getId() == idArea);
-
-        if (!existe) {
-            System.out.println("⚠️ Área verde não encontrada.");
-            return;
-        }
-
-        System.out.println("\n🌿 Avaliação da Área Verde - Notas de 1 a 5:");
-
-        int qtdArvores = obterNotaValida(scanner, "Quantidade de árvores");
-        int qualidadeAr = obterNotaValida(scanner, "Qualidade do ar");
-        int poluicaoSonora = obterNotaValida(scanner, "Ausência de poluição sonora");
-        int coletaResiduos = obterNotaValida(scanner, "Coleta de resíduos");
-        int transportePublico = obterNotaValida(scanner, "Facilidade de transporte público");
-
-        AvaliacaoRepository.adicionarAvaliacao(idArea, qtdArvores, qualidadeAr,
-                poluicaoSonora, coletaResiduos, transportePublico);
-        System.out.println("✅ Avaliação registrada com sucesso!");
-    }
-
-    // Método para visualizar detalhes de uma área verde
-    private static void verDetalheAreaVerde(Scanner scanner) {
-        int idArea = obterIdValido(scanner, "Digite o ID da área verde que deseja ver os detalhes");
-
-        List<AreaVerde> areas = AreaVerdeRepository.listarAreasVerdes();
-        AreaVerde areaSelecionada = areas.stream()
-                .filter(a -> a.getId() == idArea)
-                .findFirst()
-                .orElse(null);
-
-        if (areaSelecionada == null) {
-            System.out.println("⚠️ Área verde não encontrada. Tente novamente.");
-            return;
-        }
-
-        System.out.println("\n📍 Detalhes da Área Verde:");
-        System.out.println("ID: " + areaSelecionada.getId());
-        System.out.println("Nome: " + areaSelecionada.getNome());
-        System.out.println("Tipo de Vegetação: " + areaSelecionada.getTipoVegetacao());
-        System.out.println("Horário de Funcionamento: " + areaSelecionada.getHorarioFuncionamento());
-
-        List<Avaliacao> avaliacoes = AvaliacaoRepository.listarAvaliacoes();
-        double mediaAvaliacoes = avaliacoes.stream()
-                .filter(a -> a.getIdAreaVerde() == idArea)
-                .mapToDouble(Avaliacao::calcularMedia)
-                .average()
-                .orElse(0.0);
-
-        System.out.printf("Média das Avaliações: %.2f\n", mediaAvaliacoes);
-    }
-
-    private static void cadastrarAreaVerde(Scanner scanner) {
-        System.out.println("\n📍 Cadastro de Nova Área Verde:");
-        String nome = obterTextoValido(scanner, "Nome da área verde");
-        String tipoVegetacao = obterTextoValido(scanner, "Tipo de vegetação (Árvores, Arbustos, Gramado, etc.)");
-        String horarioFuncionamento = obterHorarioFuncionamentoValido(scanner);
-
-        // Configura Locale para garantir que ponto seja usado como separador decimal
-        scanner.useLocale(java.util.Locale.US);
-        System.out.println("\n🌍 Exemplo de coordenadas válidas:");
-        System.out.println("Joinville: -26.3044, -48.8489");
-        System.out.println("São Paulo: -23.5505, -46.6333");
-
-        // Validação de latitude e longitude
-        double latitude = obterCoordenadaValida(scanner, "Latitude", -90, 90);
-        double longitude = obterCoordenadaValida(scanner, "Longitude", -180, 180);
-
-        AreaVerdeRepository.adicionarAreaVerde(nome, tipoVegetacao, horarioFuncionamento);
-        int idNovaArea = AreaVerdeRepository.listarAreasVerdes().size();
-        LocalizacaoRepository.adicionarLocalizacao(latitude, longitude, idNovaArea);
-        System.out.println("✅ Área verde cadastrada com sucesso!");
-    }
-
-    private static void listarLocalizacoes() {
-        List<Localizacao> localizacoes = LocalizacaoRepository.listarLocalizacoes();
-        if (localizacoes.isEmpty()) {
-            System.out.println("⚠️ Nenhuma localização cadastrada.");
-        } else {
-            System.out.println("\n📍 Localizações das Áreas Verdes:");
-            for (Localizacao loc : localizacoes) {
-                System.out.println(loc);
-            }
-        }
-    }
-
-    /**
-     * Métodos auxiliares -------------------------------------------
-     */
-    private static String obterTextoValido(Scanner scanner, String mensagem) {
-        String texto;
-        do {
-            System.out.print(mensagem + ": ");
-            texto = scanner.nextLine().trim();
-            if (texto.isEmpty()) {
-                System.out.println("⚠️ Esse campo não pode estar vazio.");
-            }
-        } while (texto.isEmpty());
-        return texto;
-    }
-
-    private static double obterCoordenadaValida(Scanner scanner, String tipo, double min, double max) {
-        double valor;
-        while (true) {
-            System.out.print(tipo + " (" + min + " a " + max + "): ");
-            if (scanner.hasNextDouble()) {
-                valor = scanner.nextDouble();
-                if (valor >= min && valor <= max) {
-                    break;
-                } else {
-                    System.out.println(
-                            "⚠️ Valor inválido! O valor de " + tipo + " deve estar entre " + min + " e " + max + ".");
+        private static String validarTexto(String valor, String campo) throws Exception {
+                if (valor == null || !valor.matches("[A-Za-zÀ-ÿ ]{3,}")) {
+                        throw new Exception("⚠️ O campo '" + campo
+                                        + "' deve conter apenas letras e no mínimo 3 caracteres.");
                 }
-            } else {
-                System.out.println("⚠️ Entrada inválida! Digite um número decimal válido para " + tipo + ".");
-                scanner.next();
-            }
+                return valor.trim();
         }
-        scanner.nextLine();
-        return valor;
-    }
 
-    private static int obterIdValido(Scanner scanner, String mensagem) {
-        int id;
-        do {
-            System.out.print("\n🔍 " + mensagem + ": ");
-            while (!scanner.hasNextInt()) {
-                System.out.println("⚠️ Entrada inválida! Digite um número inteiro válido.");
-                scanner.next();
-            }
-            id = scanner.nextInt();
-        } while (id <= 0);
-        return id;
-    }
-
-    private static int obterNotaValida(Scanner scanner, String criterio) {
-        int nota;
-        while (true) {
-            System.out.print(criterio + " (1 a 5): ");
-            if (scanner.hasNextInt()) {
-                nota = scanner.nextInt();
-                scanner.nextLine();
-                if (nota >= 1 && nota <= 5) {
-                    break;
-                } else {
-                    System.out.println("⚠️ Nota inválida! Digite um número entre 1 e 5.");
+        private static String validarHorario(String horario) throws Exception {
+                if (horario == null || !horario.matches("\\d{2}:\\d{2} - \\d{2}:\\d{2}")) {
+                        throw new Exception("⚠️ Formato de horário inválido! Use HH:mm - HH:mm (Ex: 08:00 - 18:00).");
                 }
-            } else {
-                System.out.println("⚠️ Entrada inválida! Digite um número inteiro entre 1 e 5.");
-                scanner.next();
-            }
+                return horario;
         }
-        return nota;
-    }
 
-    private static String obterHorarioFuncionamentoValido(Scanner scanner) {
-        String horario;
-        String regexHorario = "([01]\\d|2[0-3]):[0-5]\\d - ([01]\\d|2[0-3]):[0-5]\\d";
+        private static double validarCoordenada(String valor, double min, double max, String campo) throws Exception {
+                if (valor == null || !valor.matches("-?\\d{1,3}\\.\\d{1,6}")) {
+                        throw new Exception(
+                                        "⚠️ O campo '" + campo + "' deve estar no formato correto, ex: -26.304400.");
+                }
+                double coord = Double.parseDouble(valor);
+                if (coord < min || coord > max) {
+                        throw new Exception("⚠️ O campo '" + campo + "' deve estar entre " + min + " e " + max + ".");
+                }
+                return coord;
+        }
 
-        do {
-            System.out.print("Horário de funcionamento (exemplo: 08:00 - 20:00): ");
-            horario = scanner.nextLine().trim();
+        private static boolean validarNota(int nota) {
+                return nota >= 1 && nota <= 5;
+        }
 
-            if (!horario.matches(regexHorario)) {
-                System.out.println("⚠️ Formato inválido! Digite no formato correto (exemplo: 08:00 - 20:00).");
-            }
-
-        } while (!horario.matches(regexHorario));
-
-        return horario;
-    }
 }

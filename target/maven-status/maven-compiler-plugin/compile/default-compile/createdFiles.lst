@@ -1,0 +1,11 @@
+br/com/joinville/mapa/AreaVerde.class
+br/com/joinville/mapa/AvaliacaoRepository.class
+br/com/joinville/mapa/AreaVerdeRepository.class
+br/com/joinville/mapa/TesteAreaVerde.class
+br/com/joinville/mapa/MainTerminal.class
+br/com/joinville/mapa/TesteLocalizacao.class
+br/com/joinville/mapa/Localizacao.class
+br/com/joinville/mapa/TesteAvaliacao.class
+br/com/joinville/mapa/LocalizacaoRepository.class
+br/com/joinville/mapa/Main.class
+br/com/joinville/mapa/Avaliacao.class
