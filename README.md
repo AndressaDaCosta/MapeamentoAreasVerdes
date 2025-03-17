@@ -194,7 +194,7 @@ Após isso, acesse no navegador:
 
 ⏳ **Persistência de dados** (atualmente, os dados são armazenados apenas em memória)
 
-⏳ **Interface gráfica** para interação mais amigável
+✅ **Interface gráfica** para interação mais amigável
 
 ⏳ **Banco de dados** para armazenamento permanente das áreas verdes
 
