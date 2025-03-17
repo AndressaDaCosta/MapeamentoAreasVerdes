@@ -160,25 +160,25 @@ Se deseja rodar o **servidor web** e acessar a aplicação pelo navegador:
 
 ### **1️⃣ Clone o repositório**
 
-```json
+```
 git clone git@github.com:AndressaDaCosta/MapeamentoAreasVerdes.git
 ```
 
 ### **2️⃣ Acesse o diretório do projeto**
 
-```json
+```
 cd MapeamentoAreasVerdes
 ```
 
 ### **3️⃣ Compile o projeto**
 
-```json
+```
 mvn clean compile
 ```
 
 ### **4️⃣ Execute o projeto na versão web**
 
-```json
+```
 mvn exec:java -Dexec.mainClass="br.com.joinville.mapa.Main"
 ```
 
